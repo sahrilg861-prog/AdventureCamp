@@ -1,0 +1,349 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define JUMLAH_ALAT 5
+#define MAX_TRANSAKSI 10
+#define MAX_NAMA 100
+
+// Daftar nama peralatan
+char namaAlat[JUMLAH_ALAT][50] = {
+    "Tenda Kapasitas 4 Orang",
+    "Sleeping Bag",
+    "Kompor Portable",
+    "Matras Camping",
+    "Lampu Camping"
+};
+
+// Daftar harga sewa per hari
+int hargaAlat[JUMLAH_ALAT] = {
+    50000,
+    15000,
+    20000,
+    10000,
+    12000
+};
+
+// Array untuk menyimpan riwayat transaksi
+char namaPenyewa[MAX_TRANSAKSI][MAX_NAMA];
+int jenisAlat[MAX_TRANSAKSI];
+int jumlahUnit[MAX_TRANSAKSI];
+int lamaSewa[MAX_TRANSAKSI];
+long long totalBayar[MAX_TRANSAKSI];
+
+// Jumlah transaksi yang sudah dilakukan
+int jumlahTransaksi = 0;
+
+
+// ========================================
+// FUNGSI MEMBERSIHKAN BUFFER INPUT
+// ========================================
+void bersihkanBuffer() {
+    int c;
+
+    while ((c = getchar()) != '\n' && c != EOF) {
+    }
+}
+
+
+// ========================================
+// FUNGSI INPUT ANGKA
+// ========================================
+int inputAngka(char pesan[], int minimal, int maksimal) {
+    int angka;
+    int hasil;
+
+    while (1) {
+        printf("%s", pesan);
+
+        hasil = scanf("%d", &angka);
+
+        if (hasil != 1) {
+            printf("Input harus berupa angka!\n");
+            bersihkanBuffer();
+            continue;
+        }
+
+        bersihkanBuffer();
+
+        if (angka < minimal || angka > maksimal) {
+            printf("Input tidak valid! Masukkan angka %d sampai %d.\n",
+                   minimal, maksimal);
+            continue;
+        }
+
+        return angka;
+    }
+}
+
+
+// ========================================
+// FUNGSI MENAMPILKAN MENU UTAMA
+// ========================================
+void tampilMenu() {
+    printf("\n========================================\n");
+    printf("          ADVENTURE CAMP\n");
+    printf("     SISTEM PENYEWAAN PERALATAN\n");
+    printf("========================================\n");
+    printf("1. Lihat Daftar Peralatan\n");
+    printf("2. Sewa Peralatan\n");
+    printf("3. Lihat Riwayat Transaksi\n");
+    printf("4. Keluar\n");
+    printf("========================================\n");
+}
+
+
+// ========================================
+// FUNGSI MENAMPILKAN DAFTAR PERALATAN
+// ========================================
+void tampilPeralatan() {
+    int i;
+
+    printf("\n========================================\n");
+    printf("         DAFTAR PERALATAN\n");
+    printf("========================================\n");
+
+    for (i = 0; i < JUMLAH_ALAT; i++) {
+        printf("%d. %s\n", i + 1, namaAlat[i]);
+        printf("   Harga: Rp%d / hari\n\n", hargaAlat[i]);
+    }
+
+    printf("========================================\n");
+}
+
+
+// ========================================
+// FUNGSI MENGHITUNG DISKON
+// ========================================
+int hitungDiskon(int hari) {
+    if (hari >= 5) {
+        return 15;
+    } else if (hari >= 3) {
+        return 10;
+    } else {
+        return 0;
+    }
+}
+
+
+// ========================================
+// FUNGSI MENAMPILKAN STRUK
+// ========================================
+void tampilStruk(int indeks, long long subtotal,
+                 long long diskon, int persenDiskon) {
+
+    printf("\n========================================\n");
+    printf("          ADVENTURE CAMP\n");
+    printf("           STRUK PENYEWAAN\n");
+    printf("========================================\n");
+
+    printf("Nama Penyewa   : %s\n", namaPenyewa[indeks]);
+    printf("Peralatan      : %s\n", namaAlat[jenisAlat[indeks]]);
+    printf("Harga per Hari : Rp%d\n", hargaAlat[jenisAlat[indeks]]);
+    printf("Jumlah Unit    : %d\n", jumlahUnit[indeks]);
+    printf("Lama Sewa      : %d hari\n", lamaSewa[indeks]);
+
+    printf("----------------------------------------\n");
+    printf("Subtotal       : Rp%lld\n", subtotal);
+    printf("Diskon (%d%%)   : Rp%lld\n", persenDiskon, diskon);
+    printf("----------------------------------------\n");
+    printf("TOTAL BAYAR    : Rp%lld\n", totalBayar[indeks]);
+    printf("========================================\n");
+
+    printf("Terima kasih telah menggunakan\n");
+    printf("layanan Adventure Camp!\n");
+}
+
+
+// ========================================
+// FUNGSI MELAKUKAN PENYEWAAN
+// ========================================
+int sewaPeralatan() {
+    int pilihan;
+    int indeks;
+    int persenDiskon;
+    long long subtotal;
+    long long diskon;
+    char kembali;
+
+    // Mengecek kapasitas transaksi
+    if (jumlahTransaksi >= MAX_TRANSAKSI) {
+        printf("\nMaaf, kapasitas transaksi sudah penuh!\n");
+        printf("Maksimal transaksi adalah %d.\n", MAX_TRANSAKSI);
+        return 1;
+    }
+
+    indeks = jumlahTransaksi;
+
+    printf("\n========================================\n");
+    printf("           FORM PENYEWAAN\n");
+    printf("========================================\n");
+
+    // Input nama penyewa
+    do {
+        printf("Masukkan nama penyewa: ");
+
+        if (fgets(namaPenyewa[indeks], MAX_NAMA, stdin) == NULL) {
+            printf("Gagal membaca nama penyewa.\n");
+            return 0;
+        }
+
+        // Menghapus karakter newline
+        namaPenyewa[indeks][strcspn(namaPenyewa[indeks], "\n")] = '\0';
+
+        if (strlen(namaPenyewa[indeks]) == 0) {
+            printf("Nama penyewa tidak boleh kosong!\n");
+        }
+
+    } while (strlen(namaPenyewa[indeks]) == 0);
+
+    // Menampilkan daftar peralatan
+    tampilPeralatan();
+
+    // Input pilihan peralatan
+    pilihan = inputAngka(
+        "Pilih nomor peralatan [1-5]: ", 1, 5
+    );
+
+    jenisAlat[indeks] = pilihan - 1;
+
+    // Input jumlah unit
+    jumlahUnit[indeks] = inputAngka(
+        "Masukkan jumlah unit: ", 1, 1000
+    );
+
+    // Input lama penyewaan
+    lamaSewa[indeks] = inputAngka(
+        "Masukkan lama sewa (hari): ", 1, 365
+    );
+
+    // Menghitung subtotal
+    subtotal = (long long) hargaAlat[jenisAlat[indeks]]
+               * jumlahUnit[indeks]
+               * lamaSewa[indeks];
+
+    // Menghitung persentase diskon
+    persenDiskon = hitungDiskon(lamaSewa[indeks]);
+
+    // Menghitung nominal diskon
+    diskon = subtotal * persenDiskon / 100;
+
+    // Menghitung total pembayaran
+    totalBayar[indeks] = subtotal - diskon;
+
+    // Menyimpan transaksi
+    jumlahTransaksi++;
+
+    // Menampilkan struk
+    tampilStruk(indeks, subtotal, diskon, persenDiskon);
+
+    // Menanyakan apakah ingin kembali ke menu
+    do {
+        printf("\nKembali ke menu utama? (Y/T): ");
+        scanf(" %c", &kembali);
+        bersihkanBuffer();
+
+        if (kembali != 'Y' && kembali != 'y' &&
+            kembali != 'T' && kembali != 't') {
+            printf("Pilihan tidak valid! Masukkan Y atau T.\n");
+        }
+
+    } while (kembali != 'Y' && kembali != 'y' &&
+             kembali != 'T' && kembali != 't');
+
+    if (kembali == 'Y' || kembali == 'y') {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+
+// ========================================
+// FUNGSI MENAMPILKAN RIWAYAT TRANSAKSI
+// ========================================
+void tampilRiwayat() {
+    int i;
+    long long totalPendapatan = 0;
+
+    printf("\n========================================\n");
+    printf("          RIWAYAT TRANSAKSI\n");
+    printf("========================================\n");
+
+    // Jika belum ada transaksi
+    if (jumlahTransaksi == 0) {
+        printf("Belum ada transaksi penyewaan.\n");
+        printf("========================================\n");
+        return;
+    }
+
+    // Menampilkan seluruh transaksi
+    for (i = 0; i < jumlahTransaksi; i++) {
+        printf("\nTransaksi ke-%d\n", i + 1);
+        printf("----------------------------------------\n");
+
+        printf("Nama Penyewa : %s\n", namaPenyewa[i]);
+        printf("Peralatan    : %s\n", namaAlat[jenisAlat[i]]);
+        printf("Jumlah Unit  : %d\n", jumlahUnit[i]);
+        printf("Lama Sewa    : %d hari\n", lamaSewa[i]);
+        printf("Total Bayar  : Rp%lld\n", totalBayar[i]);
+
+        totalPendapatan += totalBayar[i];
+    }
+
+    printf("\n========================================\n");
+    printf("Jumlah Transaksi : %d\n", jumlahTransaksi);
+    printf("Total Pendapatan : Rp%lld\n", totalPendapatan);
+    printf("========================================\n");
+}
+
+
+// ========================================
+// FUNGSI UTAMA PROGRAM
+// ========================================
+int main() {
+    int menu;
+    int berjalan = 1;
+
+    // Program berjalan selama berjalan = 1
+    while (berjalan) {
+
+        tampilMenu();
+
+        menu = inputAngka("Pilih menu [1-4]: ", 1, 4);
+
+        switch (menu) {
+
+            case 1:
+                // Menampilkan daftar peralatan
+                tampilPeralatan();
+                break;
+
+            case 2:
+                // Melakukan proses penyewaan
+                berjalan = sewaPeralatan();
+                break;
+
+            case 3:
+                // Menampilkan riwayat transaksi
+                tampilRiwayat();
+                break;
+
+            case 4:
+                // Mengakhiri program
+                printf("\n========================================\n");
+                printf("Terima kasih telah menggunakan\n");
+                printf("Sistem Penyewaan Adventure Camp!\n");
+                printf("========================================\n");
+
+                berjalan = 0;
+                break;
+
+            default:
+                printf("Pilihan menu tidak valid!\n");
+                break;
+        }
+    }
+
+    return 0;
+}
